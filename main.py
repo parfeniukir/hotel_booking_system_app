@@ -33,19 +33,26 @@ class ReservationTicket:
         pass
 
 
-df = pd.read_csv("hotels.csv")
-print(df)
+def main():
+    df = pd.read_csv("hotels.csv")
+    print(df)
 
-hotel_id = input("Enter the ID of the hotel")
-hotel = Hotel(hotel_id=hotel_id)
+    hotel_id = input("Enter the ID of the hotel")
+    hotel = Hotel(hotel_id=hotel_id)
 
-if hotel.available():
-    hotel.booking()
-    customer_name = input("Enter you name: ")
-    reservation_ticket = ReservationTicket(
-        customer_name=customer_name,
-        hotel_obj=hotel,
-    )
-    reservation_ticket.generate()
-else:
-    print("Sorry, the hotel is not available for booking.")
+    if hotel.available():
+        hotel.booking()
+        customer_name = input("Enter you name: ")
+        reservation_ticket = ReservationTicket(
+            customer_name=customer_name,
+            hotel_obj=hotel,
+        )
+        reservation_ticket.generate()
+    else:
+        print("Sorry, the hotel is not available for booking.")
+
+
+if __name__ == "__main__":
+    # перевірка чи запусткається безпосередньо файл main.py
+    # якщо ні - то функція main() не буде викликана
+    main()
