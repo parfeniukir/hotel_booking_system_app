@@ -2,126 +2,171 @@
 # Вона часто використовується для читання та маніпулювання CSV, Excel та іншими файлами даних.
 import pandas as pd
 
-# -------------------------------------------------------------------
+# -------------------------- Завантаження Даних --------------------------
 
-# Читаємо файл "hotels.csv" і завантажуємо його вміст у DataFrame під назвою df_hotels.
-# Аргумент dtype={"id": str} гарантує, що значення у стовпці "id" будуть інтерпретовані як рядки (string),
-# що важливо для уникнення проблем з провідними нулями або некоректним порівнянням.
+# Читаємо файл "hotels.csv" і завантажуємо його вміст у DataFrame.
+# dtype={"id": str} гарантує, що ID готелів інтерпретуються як рядки.
 df_hotels = pd.read_csv("hotels.csv", dtype={"id": str})
-# Закоментовані рядки нижче можна використовувати для налагодження:
-# print(df_hotels)
-# print(type(df_hotels))
+
+# Читаємо файл "cards.csv" для валідації кредитних карток.
+# dtype=str гарантує, що всі дані картки (номер, CVC тощо) читаються як рядки.
+# .to_dict(orient="records") перетворює DataFrame на список словників.
+# Кожен словник у цьому списку представляє одну дійсну картку у форматі ключ-значення.
+df_cards = pd.read_csv("cards.csv", dtype=str).to_dict(orient="records")
+# print(df_cards) # Коментар для налагодження: вивести список дійсних карток.
+
+# ----------------------------- Клас Hotel -----------------------------
 
 
-# Визначаємо клас Hotel, який представляє окремий готель та його логіку.
+# Клас Hotel представляє окремий готель та його функціональність.
 class Hotel:
-    # Метод-конструктор, який викликається при створенні нового об'єкта Hotel.
+    # Метод-конструктор.
     def __init__(self, hotel_id):
-        # Зберігаємо ID готелю, переданий при створенні об'єкта.
         self.hotel_id = hotel_id
-        # Знаходимо назву готелю в DataFrame df_hotels:
-        # 1. df_hotels["id"] == self.hotel_id - фільтруємо рядки, де "id" відповідає ID готелю.
-        # 2. .loc[...] - вибираємо ці відфільтровані рядки.
-        # 3. ..., "name" - вибираємо значення лише зі стовпця "name".
-        # 4. .squeeze() - перетворює отриманий рядок (який є серією pandas) на просте строкове значення (якщо знайдено один результат).
+        # Знаходимо назву готелю в DataFrame df_hotels за його ID.
         self.name = df_hotels.loc[df_hotels["id"] == self.hotel_id, "name"].squeeze()
-        # print("HOTEL NAME", self.name) # Коментар для налагодження, щоб побачити назву.
 
-    # Метод для "бронювання" готелю.
+    # Метод для бронювання готелю.
     def booking(self):
-        # Оновлюємо значення в стовпці "available" на "no" для рядка, який відповідає ID поточного готелю.
-        # Це позначає готель як заброньований/недоступний.
+        # Змінюємо статус доступності ("available") на "no" для вибраного готелю.
         df_hotels.loc[df_hotels["id"] == self.hotel_id, "available"] = "no"
-        # Зберігаємо оновлений DataFrame назад у файл "hotels.csv".
-        # index=False запобігає запису індексів рядків DataFrame у CSV-файл.
+        # Зберігаємо оновлений DataFrame назад у файл "hotels.csv" (без індексів).
         df_hotels.to_csv("hotels.csv", index=False)
 
-    # Метод для перевірки, чи доступний готель для бронювання.
+    # Метод для перевірки доступності готелю.
     def available(self):
-        """Check if the hotel is available"""  # Документуючий рядок (docstring) для пояснення функції методу.
-        # Фільтруємо DataFrame по ID готелю і отримуємо значення зі стовпця "available" для цього готелю.
-        available = df_hotels.loc[df_hotels["id"] == self.hotel_id, "available"].squeeze()
-
-        # Обробка можливих помилок за допомогою блоку try-except.
+        """Check if the hotel is available"""  # Документуючий рядок.
+        # Отримуємо значення колонки "available" для цього ID.
+        available = df_hotels.loc[
+            df_hotels["id"] == self.hotel_id, "available"
+        ].squeeze()
         try:
-            # Якщо значення "available" - "yes", повертаємо True (доступний).
+            # Повертаємо True, якщо статус 'yes', і False, якщо 'no' (або інший).
             if available == "yes":
                 return True
-            # Інакше (якщо "no" або інше значення), повертаємо False (недоступний).
             else:
                 return False
-        # Якщо .squeeze() не може знайти значення (наприклад, ID готелю не існує),
-        # він може повернути NaN або викликати іншу несподівану поведінку, яку ми намагаємось зловити.
-        # Хоча, якщо ID не існує, available буде pandas.Series, тому краще тут ловити випадок, коли available не є рядком.
-        # Простий ValueError тут не зовсім коректний для цієї логіки, але залишаємо як у вихідному коді.
         except ValueError:
+            # Обробка випадку, коли ID готелю не існує.
             print("This ID is not exist!")
-            exit()  # Завершуємо виконання програми, якщо ID не знайдено.
-        # Закоментовані рядки для налагодження:
-        # print(available)
-        # print(type(available))
+            exit()
 
 
-# -------------------------------------------------------------------
+# -------------------------- Клас ReservationTicket --------------------------
 
 
-# Визначаємо клас ReservationTicket, який створює квиток (підтвердження) про бронювання.
+# Клас для генерації підтвердження/квитка бронювання.
 class ReservationTicket:
-    # Конструктор приймає ім'я клієнта та об'єкт готелю (екземпляр класу Hotel).
+    # Конструктор приймає ім'я клієнта та об'єкт готелю.
     def __init__(self, customer_name, hotel_obj):
         self.customer_name = customer_name
-        self.hotel_obj = hotel_obj  # Зберігаємо об'єкт готелю для доступу до його властивостей (як-от назва).
+        self.hotel_obj = hotel_obj
 
-    # Метод для генерації тексту квитка/підтвердження.
+    # Метод для створення форматованого рядка квитка.
     def generate(self):
-        # Створюємо багаторядковий рядок (f-рядок) з даними бронювання,
-        # використовуючи ім'я клієнта та назву готелю з об'єкта `hotel_obj`.
+        # f-рядок для виведення даних бронювання.
         ticket = f"""
         Thank you for your reservation.
         Here is your booking data:
         Name: {self.customer_name}.
         Hotel name: {self.hotel_obj.name}
         """
-        return ticket  # Повертаємо сформований текст квитка.
+        return ticket
 
 
-# -------------------------------------------------------------------
+# --------------------------- Клас CreditCard ---------------------------
 
 
-# Визначаємо основну функцію програми, де відбувається логіка взаємодії з користувачем.
+# Новий клас для роботи з даними кредитної картки та її валідацією.
+class CreditCard:
+    # Конструктор приймає всі необхідні дані картки.
+    def __init__(self, number, expiration_date, cvc_code, holder_name):
+        self.number = number
+        self.expiration_date = expiration_date
+        self.cvc_code = cvc_code
+        self.holder_name = holder_name
+
+    # Метод для валідації картки проти завантаженого списку дійсних карток (df_cards).
+    def validate(self):
+        # Створюємо словник з даними поточної картки користувача для порівняння.
+        card_data = {
+            "number": self.number,
+            "expiration": self.expiration_date,
+            "cvc": self.cvc_code,
+            "holder": self.holder_name,
+        }
+        # Перевіряємо, чи існує цей словник (тобто, чи збігаються всі дані) у списку df_cards.
+        if card_data in df_cards:
+            return True  # Валідація успішна.
+        else:
+            return False  # Валідація не пройдена.
+
+
+# ------------------------------ Основна Логіка ------------------------------
+
+
+# Головна функція, яка керує потоком виконання програми.
 def main():
-    # Виводимо весь список готелів з їхніми ID та статусом доступності.
+    # 1. Перегляд готелів: Виводимо список доступних готелів.
     print(df_hotels)
 
-    # Запитуємо у користувача ID готелю, який він хоче забронювати.
-    hotel_id = input("Enter the ID of the hotel: ")
-    # Створюємо новий об'єкт класу Hotel, використовуючи наданий ID.
-    hotel = Hotel(hotel_id=hotel_id)
+    # 2. Збір даних для оплати: Запитуємо дані кредитної картки.
+    card_number = input("Enter your card number (4 digit): ")
+    expiration_date = input("Enter your expiration date (MM/YY): ")
+    cvc_code = input("Enter your CVC code: ")
+    cardholder_name = input("Enter cardholder name: ")
 
-    # Перевіряємо, чи доступний готель для бронювання, викликаючи метод available().
-    if hotel.available():
-        # Якщо доступний, викликаємо метод booking(), щоб змінити статус в CSV-файлі на "no".
-        hotel.booking()
-        # Запитуємо ім'я клієнта.
-        customer_name = input("Enter you name: ")
-        # Створюємо об'єкт ReservationTicket з ім'ям клієнта та об'єктом готелю.
-        reservation_ticket = ReservationTicket(
-            customer_name=customer_name,
-            hotel_obj=hotel,
-        )
-        # Генеруємо та виводимо підтвердження бронювання.
-        print(reservation_ticket.generate())
+    # Створюємо об'єкт CreditCard з введеними даними.
+    credit_card = CreditCard(
+        number=card_number,
+        expiration_date=expiration_date,
+        cvc_code=cvc_code,
+        holder_name=cardholder_name,
+    )
+
+    # 3. Валідація картки.
+    # validate will return True or False (Повертає True або False)
+    if credit_card.validate():
+        print("Your credit card was validated successfully!")
+
+        # Якщо картка дійсна:
+        # Запитуємо ID готелю.
+        hotel_id = input("Enter the ID of the hotel: ")
+        # Створюємо об'єкт Hotel.
+        hotel = Hotel(hotel_id=hotel_id)
+
+        # Перевіряємо доступність готелю.
+        if hotel.available():
+            # Якщо доступний:
+            # Виконуємо бронювання (оновлюємо CSV-файл).
+            hotel.booking()
+
+            # Запитуємо ім'я клієнта (пропонуємо використати ім'я власника картки).
+            customer_name = input(
+                "Enter your name. If you want to use cardholder name as your name press ENTER: "
+            )
+
+            # Якщо користувач натиснув Enter (залишив поле порожнім), використовуємо ім'я власника картки.
+            if not customer_name:
+                customer_name = cardholder_name
+
+            # Створюємо об'єкт ReservationTicket.
+            reservation_ticket = ReservationTicket(
+                customer_name=customer_name,
+                hotel_obj=hotel,
+            )
+            # 4. Отримання підтвердження: Виводимо згенерований квиток.
+            print(reservation_ticket.generate())
+        else:
+            # Готель недоступний.
+            print("Sorry, the hotel is not available for booking.")
     else:
-        # Якщо готель недоступний, виводимо відповідне повідомлення.
-        print("Sorry, the hotel is not available for booking.")
+        # Валідація картки не пройшла. Бронювання неможливе.
+        print("Invalid credit card data")
 
 
-# -------------------------------------------------------------------
-
-# Цей блок гарантує, що функція main() буде викликана лише тоді, коли файл
-# запускається безпосередньо (а не імпортується як модуль в інший файл).
+# Точка входу в програму.
 if __name__ == "__main__":
-    # Коментар пояснює призначення блоку:
     # перевірка чи запусткається безпосередньо файл main.py
     # якщо ні - то функція main() не буде викликана
-    main()  # Запускаємо основну логіку програми.
+    main()
