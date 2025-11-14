@@ -3,6 +3,8 @@
 - користувач може забронювати готель,
 - користувач може отримати підтвердження бронювання або квиток(ticket),
 як би ви це не називали, після того, як він забронював готель.
+- добавити можливість оплати картою, валідацію картки.
+    І якщо карта дійснa - дозволити бронювати готель.
 """
 
 # Hotel, User, ReservationTicket
@@ -13,8 +15,8 @@
 import pandas as pd
 
 df_hotels = pd.read_csv("hotels.csv", dtype={"id": str})
-# print(df_hotels)
-# print(type(df_hotels))
+df_cards = pd.read_csv("cards.csv", dtype=str).to_dict(orient="records")
+# print(df_cards)
 
 
 class Hotel:
@@ -58,22 +60,60 @@ class ReservationTicket:
         return ticket
 
 
+class CreditCard:
+    def __init__(self, number, expiration_date, cvc_code, holder_name):
+        self.number = number
+        self.expiration_date = expiration_date
+        self.cvc_code = cvc_code
+        self.holder_name = holder_name
+
+    def validate(self):
+        card_data = {
+            "number": self.number,
+            "expiration": self.expiration_date,
+            "cvc": self.cvc_code,
+            "holder": self.holder_name,
+        }
+        if card_data in df_cards:
+            return True
+        else:
+            return False
+
+
 def main():
     print(df_hotels)
 
-    hotel_id = input("Enter the ID of the hotel: ")
-    hotel = Hotel(hotel_id=hotel_id)
+    card_number = input("Enter your card number (4 digit): ")
+    expiration_date = input("Enter your expiration date (MM/YY): ")
+    cvc_code = input("Enter your CVC code: ")
+    cardholder_name = input("Enter cardholder name: ")
 
-    if hotel.available():
-        hotel.booking()
-        customer_name = input("Enter you name: ")
-        reservation_ticket = ReservationTicket(
-            customer_name=customer_name,
-            hotel_obj=hotel,
-        )
-        print(reservation_ticket.generate())
+    credit_card = CreditCard(
+        number=card_number,
+        expiration_date=expiration_date,
+        cvc_code=cvc_code,
+        holder_name=cardholder_name,
+    )
+    # validate will return True or False
+    if credit_card.validate():
+        print("Your credit card was validated successfully!")
+        hotel_id = input("Enter the ID of the hotel: ")
+        hotel = Hotel(hotel_id=hotel_id)
+
+        if hotel.available():
+            hotel.booking()
+            customer_name = input("Enter your name. If you want to use cardholder name as your name press ENTER: ")
+            if not customer_name:
+                customer_name = cardholder_name
+            reservation_ticket = ReservationTicket(
+                customer_name=customer_name,
+                hotel_obj=hotel,
+            )
+            print(reservation_ticket.generate())
+        else:
+            print("Sorry, the hotel is not available for booking.")
     else:
-        print("Sorry, the hotel is not available for booking.")
+        print("Invalid credit card data")
 
 
 if __name__ == "__main__":
