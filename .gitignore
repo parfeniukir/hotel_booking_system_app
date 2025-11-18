@@ -1,1 +1,7 @@
 hotel_app_env/
+__pycache__
+/_DS_Store
+hw.md
+lesson_10.py
+cards.csv
+card_security.csv
