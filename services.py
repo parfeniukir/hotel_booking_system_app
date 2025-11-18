@@ -2,6 +2,7 @@ import pandas as pd
 
 df_hotels = pd.read_csv("hotels.csv", dtype={"id": str})
 df_cards = pd.read_csv("cards.csv", dtype=str).to_dict(orient="records")
+df_card_security = pd.read_csv("card_security.csv", dtype=str)
 
 
 class Hotel:
@@ -60,3 +61,16 @@ class CreditCard:
             return True
         else:
             return False
+
+
+class SecureCreditCard(CreditCard):
+
+    def authencate(self, given_password):
+        password = df_card_security.loc[df_card_security["number"] == self.number, "password"].squeeze()
+        if password:
+            if password == given_password:
+                return True
+            else:
+                return False
+        else:
+            print(f"No data for card {self.number} in database.")

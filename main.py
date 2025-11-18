@@ -7,7 +7,7 @@
     І якщо карта дійснa - дозволити бронювати готель.
 """
 
-from services import Hotel, CreditCard, ReservationTicket, df_hotels
+from services import Hotel, SecureCreditCard, ReservationTicket, df_hotels
 
 
 def main():
@@ -18,32 +18,36 @@ def main():
     cvc_code = input("Enter your CVC code: ")
     cardholder_name = input("Enter cardholder name: ")
 
-    credit_card = CreditCard(
+    secure_credit_card = SecureCreditCard(
         number=card_number,
         expiration_date=expiration_date,
         cvc_code=cvc_code,
         holder_name=cardholder_name,
     )
     # validate will return True or False
-    if credit_card.validate():
+    if secure_credit_card.validate():
         print("Your credit card was validated successfully!")
-        hotel_id = input("Enter the ID of the hotel: ")
-        hotel = Hotel(hotel_id=hotel_id)
+        password = input("Enter your password: ")
+        if secure_credit_card.authencate(password):
+            hotel_id = input("Enter the ID of the hotel: ")
+            hotel = Hotel(hotel_id=hotel_id)
 
-        if hotel.available():
-            hotel.booking()
-            customer_name = input(
-                "Enter your name. If you want to use cardholder name as your name press ENTER: "
-            )
-            if not customer_name:
-                customer_name = cardholder_name
-            reservation_ticket = ReservationTicket(
-                customer_name=customer_name,
-                hotel_obj=hotel,
-            )
-            print(reservation_ticket.generate())
+            if hotel.available():
+                hotel.booking()
+                customer_name = input(
+                    "Enter your name. If you want to use cardholder name as your name press ENTER: "
+                )
+                if not customer_name:
+                    customer_name = cardholder_name
+                reservation_ticket = ReservationTicket(
+                    customer_name=customer_name,
+                    hotel_obj=hotel,
+                )
+                print(reservation_ticket.generate())
+            else:
+                print("Sorry, the hotel is not available for booking.")
         else:
-            print("Sorry, the hotel is not available for booking.")
+            print("Invalid passwords")
     else:
         print("Invalid credit card data")
 
