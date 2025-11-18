@@ -43,7 +43,8 @@ def main():
                     customer_name=customer_name,
                     hotel_obj=hotel,
                 )
-                print(reservation_ticket.generate())
+                text = reservation_ticket.generate()
+                reservation_ticket.generate_pdf(text)
             else:
                 print("Sorry, the hotel is not available for booking.")
         else:
@@ -55,4 +56,10 @@ def main():
 if __name__ == "__main__":
     # перевірка чи запусткається безпосередньо файл main.py
     # якщо ні - то функція main() не буде викликана
+
+    # for testing
+    # hotel = Hotel(hotel_id="134")
+    # ticket = ReservationTicket(customer_name="Ivanna", hotel_obj=hotel)
+    # text_for_pdf = ticket.generate()
+    # ticket.generate_pdf(text_for_pdf)
     main()

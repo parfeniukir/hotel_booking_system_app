@@ -1,4 +1,6 @@
 import pandas as pd
+from fpdf import FPDF
+
 
 df_hotels = pd.read_csv("hotels.csv", dtype={"id": str})
 df_cards = pd.read_csv("cards.csv", dtype=str).to_dict(orient="records")
@@ -41,6 +43,16 @@ class ReservationTicket:
         Hotel name: {self.hotel_obj.name}
         """
         return ticket
+
+    def generate_pdf(self, text):
+        pdf = FPDF(orientation="P", format="A4")
+        pdf.add_page()
+        pdf.set_font(family="Times", size=16, style="B")
+        # border=1
+        pdf.cell(w=0, h=10, txt="Reservation Ticket", align="C", ln=1)
+        pdf.set_font(family="Times", size=12)
+        pdf.multi_cell(w=0, h=10, txt=text)
+        pdf.output(f"{self.customer_name}_reservation.pdf")
 
 
 class CreditCard:
